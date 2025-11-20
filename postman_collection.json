@@ -1,17 +1,134 @@
 {
-  "info": {
-    "name": "Order Execution",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "item": [
-    {
-      "name": "Execute Order",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "url": { "raw": "http://localhost:3000/api/orders/execute", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["api","orders","execute"] },
-        "body": { "mode": "raw", "raw": "{\n  \"tokenIn\": \"TOKENA\",\n  \"tokenOut\": \"TOKENB\",\n  \"amount\": 1\n}\n" }
-      }
-    }
-  ]
+	"info": {
+		"_postman_id": "9a3b8f1c-0000-4000-a000-000000000000",
+		"name": "Order Execution Engine",
+		"description": "Collection for testing the Order Execution Engine API and WebSocket",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "HTTP API",
+			"item": [
+				{
+					"name": "Execute Order (Success)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenIn\": \"SOL\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/execute",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"execute"
+							]
+						},
+						"description": "Submits a market order for execution."
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Order (Large Amount)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"tokenIn\": \"BTC\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/execute",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"execute"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Execute Order (Invalid Input - Optional)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orders/execute",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orders",
+								"execute"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WebSocket",
+			"item": [
+				{
+					"name": "Subscribe to Order Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "ws://localhost:3000/api/orders/status",
+							"protocol": "ws",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"orders",
+								"status"
+							]
+						},
+						"description": "Connect via WebSocket. Once connected, send JSON: { \"orderId\": \"<ORDER_ID>\" }"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
 }
