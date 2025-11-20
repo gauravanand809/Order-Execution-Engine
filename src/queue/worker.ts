@@ -4,7 +4,7 @@ import { MockDexRouter } from '../dex/mockDexRouter';
 import { updateOrderStatus } from '../repositories/orderRepository';
 import { pub } from './orderQueue';
 
-const connection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
+const connection = new IORedis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', { maxRetriesPerRequest: null });
 
 const dex = new MockDexRouter();
 
