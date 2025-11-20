@@ -1,6 +1,7 @@
 (function(){
   const ordersEl = document.getElementById('orders');
   const submitBtn = document.getElementById('submitBtn');
+  const submit5Btn = document.getElementById('submit5Btn');
   const tokenInEl = document.getElementById('tokenIn');
   const tokenOutEl = document.getElementById('tokenOut');
   const amountEl = document.getElementById('amount');
@@ -87,6 +88,34 @@
     }catch(err){
       alert('failed to submit order');
     }finally{ submitBtn.disabled = false; }
+  });
+
+  submit5Btn.addEventListener('click', async ()=>{
+    submit5Btn.disabled = true;
+    const tokenIn = tokenInEl.value || 'TOKENA';
+    const tokenOut = tokenOutEl.value || 'TOKENB';
+    const amount = Number(amountEl.value) || 1;
+
+    const promises = [];
+    for(let i=0; i<5; i++){
+      promises.push((async ()=>{
+        try{
+          const res = await fetch('/api/orders/execute', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ tokenIn, tokenOut, amount })
+          });
+          const body = await res.json();
+          const orderId = body.orderId;
+          const { card, badge, bar } = createOrderCard(orderId, tokenIn, tokenOut, amount);
+          ordersEl.prepend(card);
+          subscribeToOrder(orderId, badge, bar);
+        }catch(err){
+          console.warn('failed to submit one of the parallel orders', err);
+        }
+      })());
+    }
+    await Promise.all(promises);
+    submit5Btn.disabled = false;
   });
 
 })();
