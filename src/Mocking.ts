@@ -1,16 +1,30 @@
 import { randomUUID } from "crypto";
 
+
+export interface QuoteRequest {
+  inputToken: string;
+  outputToken: string;
+  amountIn: number;
+}
+
 export interface Quote {
-  provider: string;
+  provider: "Raydium" | "Meteora";
   price: number;
   amountOut: number;
+  fee: number; 
+}
+
+export interface ExecuteRequest {
+  quote: Quote;
+  slippageTolerance: number; 
 }
 
 export interface SwapResult {
   txHash: string;
-  finalPrice: number;
+  executedPrice: number;
   status: "success" | "failed";
 }
+
 
 export class SlippageError extends Error {
   constructor(message: string) {
@@ -19,46 +33,57 @@ export class SlippageError extends Error {
   }
 }
 
+
+interface DexConfig {
+  latencyRange: [number, number];
+  priceVariance: number;
+  fee: number;
+}
+
+const DEX_CONFIGS: Record<"Raydium" | "Meteora", DexConfig> = {
+  Raydium: {
+    latencyRange: [200, 500],
+    priceVariance: 0.03, 
+    fee: 0.0025,
+  },
+  Meteora: {
+    latencyRange: [300, 600],
+    priceVariance: 0.04, 
+    fee: 0.003, 
+  },
+};
+
 export class MockDexRouter {
-  private basePrice = 100; // Mock base price for SOL/USDC
+  private basePrice = 100; 
 
-  async getQuote(amount: number): Promise<Quote> {
-    // Simulate 200ms delay
-    await new Promise((resolve) => setTimeout(resolve, 200));
+  /**
+   * Simulates fetching quotes from multiple DEXs.
+   * @param request The details of the desired swap.
+   * @returns A promise that resolves to an array of quotes from all supported DEXs.
+   */
+  async getQuotes(request: QuoteRequest): Promise<Quote[]> {
+    const raydiumPromise = this.getDexQuote("Raydium", request.amountIn);
+    const meteoraPromise = this.getDexQuote("Meteora", request.amountIn);
 
-    const variance = () => 1 + (Math.random() * 0.02 - 0.01); // +/- 1%
-
-    const raydiumPrice = this.basePrice * variance();
-    const meteoraPrice = this.basePrice * variance();
-
-    const raydiumQuote = {
-      provider: "Raydium",
-      price: raydiumPrice,
-      amountOut: amount * raydiumPrice,
-    };
-
-    const meteoraQuote = {
-      provider: "Meteora",
-      price: meteoraPrice,
-      amountOut: amount * meteoraPrice,
-    };
-
-    // Return best quote (highest amountOut for selling SOL, but let's assume buying USDC with SOL)
-    return raydiumQuote.amountOut > meteoraQuote.amountOut
-      ? raydiumQuote
-      : meteoraQuote;
+    return Promise.all([raydiumPromise, meteoraPromise]);
   }
 
-  async executeSwap(quote: Quote): Promise<SwapResult> {
-    // Simulate 2000ms delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+  /**
+   * Simulates executing a swap on a specific DEX.
+   * @param request The chosen quote and slippage tolerance.
+   * @returns A promise that resolves to the result of the swap, including a mock transaction hash.
+   */
+  async executeSwap(request: ExecuteRequest): Promise<SwapResult> {
+    const { quote, slippageTolerance } = request;
+    const config = DEX_CONFIGS[quote.provider];
 
-    const variance = 1 + (Math.random() * 0.04 - 0.02); // +/- 2% variance
-    const finalPrice = quote.price * variance;
+    await this.simulateDelay(config.latencyRange[0] * 2, config.latencyRange[1] * 2);
 
-    const slippage = Math.abs((finalPrice - quote.price) / quote.price);
+    const priceMovement = this.getVariance(0.02);
+    const executedPrice = quote.price * priceMovement;
 
-    if (slippage > 0.01) {
+    const slippage = Math.abs((executedPrice - quote.price) / quote.price);
+    if (slippage > slippageTolerance) {
       throw new SlippageError(
         `Slippage exceeded: ${(slippage * 100).toFixed(2)}%`
       );
@@ -66,8 +91,33 @@ export class MockDexRouter {
 
     return {
       txHash: `0x${randomUUID().replace(/-/g, "")}`,
-      finalPrice,
+      executedPrice,
       status: "success",
     };
+  }
+
+ 
+  private async getDexQuote(provider: "Raydium" | "Meteora", amountIn: number): Promise<Quote> {
+    const config = DEX_CONFIGS[provider];
+
+    await this.simulateDelay(config.latencyRange[0], config.latencyRange[1]);
+
+    const price = this.basePrice * this.getVariance(config.priceVariance);
+    
+    const fee = amountIn * config.fee;
+    const amountAfterFee = amountIn - fee;
+    
+    const amountOut = amountAfterFee * price;
+
+    return { provider, price, amountOut, fee };
+  }
+  
+  private simulateDelay(min: number, max: number): Promise<void> {
+    const delay = Math.random() * (max - min) + min;
+    return new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
+  private getVariance(variance: number): number {
+    return 1 + (Math.random() * 2 - 1) * variance;
   }
 }

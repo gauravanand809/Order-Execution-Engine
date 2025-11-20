@@ -2,31 +2,18 @@ import { Worker, Job } from "bullmq";
 import { bullConnection } from "../redis-connection.js";
 import type { jobDetail } from "../types.js";
 import { sequenceJob, dlq } from "./queue.js";
+import { WorkerService } from "../services/worker.service.js";
+
+const workerService = new WorkerService();
 
 const worker = new Worker<jobDetail>(
   "sequenceJob",
   async (job: Job<jobDetail>) => {
-    console.log(`Processing job ${job.id} with data:`, job.data);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-
-      console.log(`Job ${job.id} completed successfully`);
-      return { status: "Completed" };
-    } catch (error) {
-      console.error(`Job ${job.id} failed with error:`, error);
-
-      await dlq.add("failed-job", job.data, {
-        removeOnComplete: true,
-        removeOnFail: true,
-      });
-      throw error;
-    }
+    return await workerService.processOrder(job);
   },
   {
     connection: bullConnection,
-    concurrency: 5, 
+    concurrency: 10, 
   }
 );
 
