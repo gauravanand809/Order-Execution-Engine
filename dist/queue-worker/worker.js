@@ -1,28 +1,15 @@
-import { Worker, Job } from "bullmq";
-import { bullConnection } from "../redis-connection.js";
-import { sequenceJob, dlq } from "./queue.js";
-const worker = new Worker("sequenceJob", async (job) => {
-    console.log(`Processing job ${job.id} with data:`, job.data);
-    try {
-        // Simulate some work
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        // Here you would put your actual job processing logic
-        // For example, updating a database, calling an API, etc.
-        console.log(`Job ${job.id} completed successfully`);
-        return { status: "Completed" };
-    }
-    catch (error) {
-        console.error(`Job ${job.id} failed with error:`, error);
-        // Add the failed job to the DLQ
-        await dlq.add("failed-job", job.data, {
-            removeOnComplete: true,
-            removeOnFail: true,
-        });
-        throw error;
-    }
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const bullmq_1 = require("bullmq");
+const redis_connection_js_1 = require("../redis-connection.js");
+const queue_js_1 = require("./queue.js");
+const worker_service_js_1 = require("../services/worker.service.js");
+const workerService = new worker_service_js_1.WorkerService();
+const worker = new bullmq_1.Worker("sequenceJob", async (job) => {
+    return await workerService.processOrder(job);
 }, {
-    connection: bullConnection,
-    concurrency: 5, // Process up to 5 jobs concurrently
+    connection: redis_connection_js_1.bullConnection,
+    concurrency: 10,
 });
 worker.on("completed", (job) => {
     console.log(`Job ${job.id} has completed.`);
@@ -38,7 +25,7 @@ worker.on("failed", (job, err) => {
 const gracefulShutdown = async () => {
     console.log("Shutting down worker gracefully...");
     await worker.close();
-    await bullConnection.quit();
+    await redis_connection_js_1.bullConnection.quit();
     process.exit(0);
 };
 process.on("SIGTERM", gracefulShutdown);

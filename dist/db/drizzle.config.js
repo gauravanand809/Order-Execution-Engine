@@ -33,18 +33,16 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = dbPlugin;
-const node_postgres_1 = require("drizzle-orm/node-postgres");
-const pg_1 = require("pg");
-const schema = __importStar(require("./schema.js"));
-async function dbPlugin(fastify) {
-    const pool = new pg_1.Pool({
-        connectionString: process.env.DB_URL,
-    });
-    const db = (0, node_postgres_1.drizzle)(pool, { schema });
-    fastify.decorate('db', db);
-    fastify.addHook('onClose', async () => {
-        await pool.end();
-    });
-}
-//# sourceMappingURL=db_config.js.map
+const drizzle_kit_1 = require("drizzle-kit");
+const dotenv = __importStar(require("dotenv"));
+const path = __importStar(require("path"));
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+exports.default = (0, drizzle_kit_1.defineConfig)({
+    schema: "./src/db/schema.ts",
+    out: "./drizzle",
+    dialect: "postgresql",
+    dbCredentials: {
+        url: process.env.DB_URL || "",
+    },
+});
+//# sourceMappingURL=drizzle.config.js.map
