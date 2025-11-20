@@ -13,15 +13,21 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "prisma": "^7.0.0",
+    "@types/pg": "^8.15.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@fastify/autoload": "^6.3.1",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/postgres": "^6.0.2",
+    "@fastify/redis": "^7.1.0",
     "bullmq": "^5.63.2",
     "dotenv": "^17.2.3",
     "fastify": "^5.6.2",
     "ioredis": "^5.8.2",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "pg": "^8.16.3",
+    "socket.io": "^4.8.1"
   }
 }
