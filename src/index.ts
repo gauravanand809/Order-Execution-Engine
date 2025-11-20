@@ -1,11 +1,14 @@
 import Fastify from "fastify";
 import dotenv from "dotenv";
 import fastifyPostgres from "@fastify/postgres"; 
-// import postgressConfig from './db/db_config.js'
 import orderRouter from "./routes/order.js";
 dotenv.config();
 import { Server } from "socket.io";
 import { setupWs } from "./ws.js"; 
+import { createAdapter } from "@socket.io/redis-adapter";
+import { pubClient, subClient } from "./redis-connection.js";
+// import postgressConfig from './db/db_config.js'
+
 
 const fastify = Fastify({
     logger: true,
@@ -20,9 +23,9 @@ const fastify = Fastify({
 
 
 
-// fastify.register(fastifyPostgres,{
-//     connectionString:process.env.DB_URL
-// })
+fastify.register(fastifyPostgres,{
+    connectionString:process.env.DB_URL
+})
 
 fastify.register(orderRouter);
 // fastify.register(postgressConfig);
@@ -44,9 +47,11 @@ async function start() {
     const io = new Server(fastify.server,{
       cors:{
         origin:"*"
-      }
+      },
     }
   )
+
+    io.adapter(createAdapter(pubClient, subClient));
 
   // console.log(io);
   setupWs(io)
