@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 export function setupWs(io) {
     io.on("connection", (socket) => {
         const token = socket.handshake.auth?.token;
+        console.log(socket.id);
         try {
             jwt.verify(token, process.env.AUTH_SECRET || "MeinNahiBatunga");
             console.log("WS Connected:", socket.id);
